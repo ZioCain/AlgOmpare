@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>AlgOmpare</title>
+	<style>
+	.code-container{
+		display:flex;
+		min-height:40vh;
+	}
+	.code-container>div{
+		flex: 0 1 50%;
+		max-width: 50%;
+	}
+	textarea{
+		width: 100%;
+		resize: vertical;
+		min-height: 5rem;
+	}
+	</style>
+</head>
+<body>
+	<div class="code-container">
+		<div>
+			<textarea id="code1"></textarea>
+			<table>
+				<thead>
+					<tr>
+						<th>Test</th>
+						<th>Execution time</th>
+						<th>Iterations</th>
+						<th>Avg exectution time</th>
+					</tr>
+				</thead>
+				<tbody id="result1"></tbody>
+			</table>
+		</div>
+		<div>
+			<textarea id="code2"></textarea>
+			<table>
+				<thead>
+					<tr>
+						<th>Test</th>
+						<th>Execution time</th>
+						<th>Iterations</th>
+						<th>Avg exectution time</th>
+					</tr>
+				</thead>
+				<tbody id="result2"></tbody>
+			</table>
+		</div>
+	</div>
+	<button onclick="Compare()">Compare</button>
+
+	<script>
+		const REPEAT_TIMES = 1000, TESTS = 50;
+
+		var scripts = [];
+
+		var results = [[], []];
+
+		function Compare(){
+			results = [[], []];
+			var table1 = document.getElementById('result1');
+			table1.innerHTML = '';
+			var table2 = document.getElementById('result2');
+			table2.innerHTML = '';
+			scripts.forEach((e, i) => {
+				e.remove();
+			});
+			CreateFunction("code1", document.getElementById("code1").value);
+			CreateFunction("code2", document.getElementById("code2").value);
+			for(var k=0; k<TESTS; ++k){
+				Run(k, code1, table1, 0);
+				Run(k, code2, table2, 1);
+			}
+			final = [
+				results[0].reduce((a, b) =>{
+					return {
+						n: '-',
+						time: a.time + b.time,
+						iterations: a.iterations + b.iterations,
+						avgTime: a.avgTime + b.avgTime
+					}
+				}, 0),
+				results[1].reduce((a, b) =>{
+					return {
+						n: '-',
+						time: a.time + b.time,
+						iterations: a.iterations + b.iterations,
+						avgTime: a.avgTime + b.avgTime
+					}
+				}, 0)
+			];
+			final.forEach((res)=>{
+				res.avgTime /= res.iterations;
+			});
+			AddSum(table1, final[0]);
+			AddSum(table2, final[1]);
+		}
+
+		function Run(testN, fun, table, codeN){
+			const start = performance.now();
+			for(var k=0; k<REPEAT_TIMES; ++k){
+				fun();
+			}
+			const end = performance.now();
+			res = {
+				n: testN+1,
+				time: end-start,
+				iterations: REPEAT_TIMES,
+				avgTime: (end-start)/REPEAT_TIMES
+			};
+			AddRow(table, res);
+			results[codeN].push(res);
+		}
+
+		function AddRow(table, data){
+			let row = document.createElement("tr");
+			for(var k in data){
+				let cell = document.createElement("td");
+				cell.innerHTML = data[k];
+				row.appendChild(cell);
+			}
+			table.appendChild(row);
+		}
+
+		function AddSum(table, data){
+			let row = document.createElement("tr");
+			for(var k in data){
+				let cell = document.createElement("th");
+				cell.innerHTML = data[k];
+				row.appendChild(cell);
+			}
+			table.appendChild(row);
+		}
+
+		function CreateFunction(fnName, code){
+			var script = document.createElement("script");
+			script.innerText = "function "+fnName+"(){"+code+"}";
+			script.id = fnName;
+			document.body.appendChild(script);
+			scripts.push(script);
+		}
+	</script>
+</body>
+</html>
